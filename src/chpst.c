@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <grp.h>
 #include <stdio.h>
-#include "sgetopt.h"
 #include "error.h"
 #include "errprintf.h"
 #include "str.h"
@@ -349,10 +348,10 @@ int main(int argc, const char **argv) {
   if (str_equal(progname, "softlimit")) softlimit(argc, argv);
 
   while ((opt =getopt(argc, argv, "u:U:b:e:m:d:o:p:f:c:r:t:/:C:n:l:L:vP012V"))
-         != opteof)
+         != -1)
     switch(opt) {
-    case 'u': set_user =(char*)optarg; break;
-    case 'U': env_user =(char*)optarg; break;
+    case 'u': set_user =optarg; break;
+    case 'U': env_user =optarg; break;
     case 'b': argv0 =(char*)optarg; break;
     case 'e': env_dir =optarg; break;
     case 'm':
@@ -504,7 +503,7 @@ void setlock(int argc, const char *const *argv) {
   unsigned int x =0;
   const char *fn;
 
-  while ((opt =getopt(argc, argv, "nNxX")) != opteof)
+  while ((opt =getopt(argc, argv, "nNxX")) != -1)
     switch(opt) {
       case 'n': delay =1; break;
       case 'N': delay =0; break;
@@ -537,7 +536,7 @@ void getlarg(long *l) {
 void softlimit(int argc, const char *const *argv) {
   int opt;
   
-  while ((opt =getopt(argc,argv,"a:c:d:f:l:m:o:p:r:s:t:")) != opteof)
+  while ((opt =getopt(argc,argv,"a:c:d:f:l:m:o:p:r:s:t:")) != -1)
     switch(opt) {
     case '?': softlimit_usage();
     case 'a': getlarg(&limita); break;

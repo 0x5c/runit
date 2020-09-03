@@ -7,7 +7,6 @@
 #include "uw_tmp.h"
 #include "strerr.h"
 #include "strquote.h"
-#include "sgetopt.h"
 #include "str.h"
 #include "open.h"
 #include "byte.h"
@@ -91,7 +90,7 @@ int main (int argc, const char * const *argv, const char * const *envp) {
 
   progname =*argv;
 
-  while ((opt =getopt(argc, argv, "wV")) != opteof) {
+  while ((opt =getopt(argc, argv, "wV")) != -1) {
     switch(opt) {
     case 'w':
       wtmp =1;

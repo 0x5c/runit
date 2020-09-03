@@ -71,10 +71,10 @@ buffer_get.o buffer_put.o buffer_read.o buffer_write.o coe.o env.o \
 error.o error_str.o fd_copy.o fd_move.o fifo.o lock_ex.o lock_exnb.o \
 ndelay_off.o ndelay_on.o open_append.o open_read.o \
 open_trunc.o open_write.o openreadclose.o pathexec_env.o \
-pathexec_run.o readclose.o sgetopt.o sig.o \
+pathexec_run.o readclose.o sig.o \
 sig_block.o sig_catch.o sig_pause.o stralloc_cat.o stralloc_catb.o \
 stralloc_cats.o stralloc_eady.o stralloc_opyb.o stralloc_opys.o \
-stralloc_pend.o strerr_die.o strerr_sys.o subgetopt.o wait_nohang.o \
+stralloc_pend.o strerr_die.o strerr_sys.o wait_nohang.o \
 wait_pid.o errprintf.o
 	@printf " [AR]\t\t$@\n"
 	${SILENT}$(AR) $@ $^
