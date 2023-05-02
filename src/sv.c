@@ -1,6 +1,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <inttypes.h>
 #include "str.h"
 #include "strerr.h"
 #include "strquote.h"
@@ -8,8 +10,6 @@
 #include "sgetopt.h"
 #include "open.h"
 #include "env.h"
-#include "buffer.h"
-#include "fmt.h"
 #include "scan.h"
 #include "tai.h"
 #include "taia.h"
@@ -49,7 +49,6 @@ int (*cbk)(char*) =0;
 
 int curdir, fd, r;
 char svstatus[20];
-char sulong[FMT_ULONG];
 
 void usage() {
   if (!lsb) strerr_die4x(100, "usage: ", progname, USAGE, "\n");
@@ -65,17 +64,15 @@ void fatal2(char *m1, char *m2) {
   done(lsb ? 151 : 100);
 }
 void out(char *p, char *m1) {
-  buffer_puts(buffer_1, p);
-  buffer_puts(buffer_1, *service);
-  if (islog) buffer_puts(buffer_1, "/log");
-  buffer_puts(buffer_1, ": ");
-  buffer_puts(buffer_1, m1);
+  fputs(p, stdout);
+  fputs(*service, stdout);
+  if (islog) fputs("/log", stdout);
+  fprintf(stdout, ": %s", m1);
   if (errno) {
-    buffer_puts(buffer_1, ": ");
-    buffer_puts(buffer_1, error_str(errno));
+    fprintf(stdout, ": %s", error_str(errno));
   }
-  buffer_puts(buffer_1, "\n");
-  buffer_flush(buffer_1);
+  fputs("\n", stdout);
+  fflush(stdout);
 }
 void fail(char *m1) { ++rc; out(FAIL, m1); }
 void failx(char *m1) { errno =0; fail(m1); }
@@ -83,10 +80,8 @@ void warn(char *m1) { ++rc; out(WARN, m1); }
 void warnx(char *m1) { errno =0; warn(m1); }
 void ok(char *m1) { errno =0; out(OK, m1); }
 
-void outs(const char *s) { buffer_puts(buffer_1, s); }
-void flush(const char *s) { outs(s); buffer_flush(buffer_1); }
-void outs2(const char *s) { buffer_puts(buffer_2, s); }
-void flush2(const char *s) { outs2(s); buffer_flush(buffer_2); }
+void outs(const char *s) { fputs(s, stdout); }
+void flush(const char *s) { outs(s); fflush(stdout); }
 
 int svstatus_get() {
   if ((fd =open_write("supervise/ok")) == -1) {
@@ -118,8 +113,8 @@ unsigned int svstatus_print(char *m) {
  
   if (stat("down", &s) == -1) {
     if (errno != error_noent) {
-      outs2(WARN); outs2("unable to stat "); outs2(*service); outs2("/down: ");
-      outs2(error_str(errno)); flush2("\n");
+      fprintf(stderr, WARN "unable to stat %s/down: %s\n", *service, error_str(errno));
+      fflush(stderr);
       return(0);
     }
     normallyup =1;
@@ -136,12 +131,9 @@ unsigned int svstatus_print(char *m) {
   }
   outs(m); outs(": ");
   if (svstatus[19]) {
-    outs("(pid "); sulong[fmt_ulong(sulong, pid)] =0;
-    outs(sulong); outs(") ");
+    fprintf(stdout, "(pid %d) ", pid);
   }
-  buffer_put(buffer_1, sulong,
-    fmt_ulong(sulong, tnow.sec.x < tstatus.x ? 0 : tnow.sec.x -tstatus.x));
-  outs("s");
+  fprintf(stdout, "%" PRIu64 "s", tnow.sec.x < tstatus.x ? 0 : tnow.sec.x -tstatus.x);
   if (pid && !normallyup) outs(", normally down");
   if (!pid && normallyup) outs(", normally up");
   if (pid && svstatus[16]) outs(", paused");
@@ -181,14 +173,14 @@ int checkscript() {
 
   if (stat("check", &s) == -1) {
     if (errno == error_noent) return(1);
-    outs2(WARN); outs2("unable to stat "); outs2(*service); outs2("/check: ");
-    outs2(error_str(errno)); flush2("\n");
+    fprintf(stderr, WARN "unable to stat %s/check: %s\n", *service, error_str(errno));
+    fflush(stderr);
     return(0);
   }
   /* if (!(s.st_mode & S_IXUSR)) return(1); */
   if ((pid =fork()) == -1) {
-    outs2(WARN); outs2("unable to fork for "); outs2(*service);
-    outs2("/check: "); outs2(error_str(errno)); flush2("\n");
+    fprintf(stderr, WARN "unable to fork for %s/check: %s\n", *service, error_str(errno));
+    fflush(stderr);
     return(0);
   }
   if (!pid) {
@@ -196,14 +188,14 @@ int checkscript() {
     prog[1] =0;
     close(1);
     execve("check", prog, environ);
-    outs2(WARN); outs2("unable to run "); outs2(*service); outs2("/check: ");
-    outs2(error_str(errno)); flush2("\n");
+    fprintf(stderr, WARN "unable to run %s/check: %s\n", *service, error_str(errno));
+    fflush(stderr);
     _exit(0);
   }
   while (wait_pid(&w, pid) == -1) {
     if (errno == error_intr) continue;
-    outs2(WARN); outs2("unable to wait for child "); outs2(*service);
-    outs2("/check: "); outs2(error_str(errno)); flush2("\n");
+    fprintf(stderr, WARN "unable to wait for child %s/check: %s\n", *service, error_str(errno));
+    fflush(stderr);
     return(0);
   }
   return(!wait_exitcode(w));
