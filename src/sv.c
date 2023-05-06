@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include "str.h"
-#include "strerr.h"
+#include "errprintf.h"
 #include "strquote.h"
 #include "error.h"
 #include "sgetopt.h"
@@ -15,8 +15,8 @@
 #include "taia.h"
 #include "wait.h"
 
-#define USAGE " [-v] [-w sec] command service ..."
-#define USAGELSB " [-w sec] command"
+#define USAGE "[-v] [-w sec] command service ..."
+#define USAGELSB "[-w sec] command"
 
 #define FATAL   "fatal: "
 #define FAIL    "fail: "
@@ -51,16 +51,14 @@ int curdir, fd, r;
 char svstatus[20];
 
 void usage() {
-  if (!lsb) strerr_die4x(100, "usage: ", progname, USAGE, "\n");
-  strerr_die4x(2, "usage: ", progname, USAGELSB, "\n");
+  if (!lsb) {
+    errprintf_die(100, "usage: %s %s\n\n", progname, USAGE);
+  }
+  errprintf_die(2, "usage: %s %s\n\n", progname, USAGELSB);
 }
 void done(unsigned int e) { if (curdir != -1) fchdir(curdir); _exit(e); }
 void fatal(char *m1) {
-  strerr_warn3(FATAL, m1, ": ", &strerr_sys);
-  done(lsb ? 151 : 100);
-}
-void fatal2(char *m1, char *m2) {
-  strerr_warn4(FATAL, m1, m2, ": ", &strerr_sys);
+  errprintf(FATAL "%s: %s\n", m1, error_str(errno));
   done(lsb ? 151 : 100);
 }
 void out(char *p, char *m1) {
@@ -113,8 +111,7 @@ unsigned int svstatus_print(char *m) {
  
   if (stat("down", &s) == -1) {
     if (errno != error_noent) {
-      fprintf(stderr, WARN "unable to stat %s/down: %s\n", *service, error_str(errno));
-      fflush(stderr);
+      errprintf(WARN "unable to stat %s/down: %s\n", *service, error_str(errno));
       return(0);
     }
     normallyup =1;
@@ -173,14 +170,12 @@ int checkscript() {
 
   if (stat("check", &s) == -1) {
     if (errno == error_noent) return(1);
-    fprintf(stderr, WARN "unable to stat %s/check: %s\n", *service, error_str(errno));
-    fflush(stderr);
+    errprintf(WARN "unable to stat %s/check: %s\n", *service, error_str(errno));
     return(0);
   }
   /* if (!(s.st_mode & S_IXUSR)) return(1); */
   if ((pid =fork()) == -1) {
-    fprintf(stderr, WARN "unable to fork for %s/check: %s\n", *service, error_str(errno));
-    fflush(stderr);
+    errprintf(WARN "unable to fork for %s/check: %s\n", *service, error_str(errno));
     return(0);
   }
   if (!pid) {
@@ -188,14 +183,11 @@ int checkscript() {
     prog[1] =0;
     close(1);
     execve("check", prog, environ);
-    fprintf(stderr, WARN "unable to run %s/check: %s\n", *service, error_str(errno));
-    fflush(stderr);
-    _exit(0);
+    errprintf_die(0, WARN "unable to run %s/check: %s\n", *service, error_str(errno));
   }
   while (wait_pid(&w, pid) == -1) {
     if (errno == error_intr) continue;
-    fprintf(stderr, WARN "unable to wait for child %s/check: %s\n", *service, error_str(errno));
-    fflush(stderr);
+    errprintf(WARN "unable to wait for child %s/check: %s\n", *service, error_str(errno));
     return(0);
   }
   return(!wait_exitcode(w));
@@ -276,7 +268,7 @@ int main(int argc, char **argv) {
     switch(i) {
     case 'w': scan_ulong(optarg, &wait);
     case 'v': verbose =1; break;
-    case 'V': strerr_warn1(STR(VERSION), 0);
+    case 'V': errprintf("%s\n", STR(VERSION));
     case '?': usage();
     }
   }
