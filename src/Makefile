@@ -75,7 +75,7 @@ pathexec_run.o readclose.o seek_set.o sgetopt.o sig.o \
 sig_block.o sig_catch.o sig_pause.o stralloc_cat.o stralloc_catb.o \
 stralloc_cats.o stralloc_eady.o stralloc_opyb.o stralloc_opys.o \
 stralloc_pend.o strerr_die.o strerr_sys.o subgetopt.o wait_nohang.o \
-wait_pid.o
+wait_pid.o errprintf.o
 	@printf " [AR]\t\t$@\n"
 	${SILENT}$(AR) $@ $^
 
