@@ -8,7 +8,6 @@
 #include "strerr.h"
 #include "strquote.h"
 #include "sgetopt.h"
-#include "seek.h"
 #include "str.h"
 #include "open.h"
 #include "byte.h"
