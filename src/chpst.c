@@ -12,7 +12,6 @@
 #include "strquote.h"
 #include "uidgid.h"
 #include "scan.h"
-#include "fmt.h"
 #include "lock.h"
 #include "pathexec.h"
 #include "stralloc.h"
@@ -91,7 +90,8 @@ void suidgid(char *user, unsigned int ext) {
 
 void euidgid(char *user, unsigned int ext) {
   struct uidgid ugid;
-  char bufnum[FMT_ULONG];
+  // "Long enough for a formatted ulong+Null"
+  char str_buf[40];
 
   if (ext) {
     if (! uidgids_get(&ugid, user)) {
@@ -113,11 +113,13 @@ void euidgid(char *user, unsigned int ext) {
       }
       errprintf_die(111, FATAL "unknown account: %s\n", user);
     }
-  bufnum[fmt_ulong(bufnum, *ugid.gid)] =0;
+
+  snprintf(str_buf, 40, "%lu", (unsigned long)*ugid.gid);
   if (! pathexec_env("GID", str_buf)) {
     errprintf_die(111, FATAL "out of memory.\n");
   }
-  bufnum[fmt_ulong(bufnum, ugid.uid)] =0;
+
+  snprintf(str_buf, 40, "%lu", (unsigned long)ugid.uid);
   if (! pathexec_env("UID", str_buf)) {
     errprintf_die(111, FATAL "out of memory.\n");
   }
